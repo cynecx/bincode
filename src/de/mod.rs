@@ -9,6 +9,8 @@ use serde::de::Error as DeError;
 use serde::de::IntoDeserializer;
 use {Error, ErrorKind, Result};
 
+use super::varint;
+
 pub mod read;
 
 /// A Deserializer that reads bytes from a buffer.
@@ -245,7 +247,7 @@ where
             where
                 V: serde::de::DeserializeSeed<'de>,
             {
-                let idx: u32 = try!(serde::de::Deserialize::deserialize(&mut *self));
+                let idx: u32 = try!(deserialize_u32_varint(&mut *self));
                 let val: Result<_> = seed.deserialize(idx.into_deserializer());
                 Ok((try!(val), self))
             }
@@ -483,4 +485,13 @@ static UTF8_CHAR_WIDTH: [u8; 256] = [
 // This function is a copy of core::str::utf8_char_width
 fn utf8_char_width(b: u8) -> usize {
     UTF8_CHAR_WIDTH[b as usize] as usize
+}
+
+fn deserialize_u32_varint<'a, 'de, R, O>(deserializer: &'a mut Deserializer<R, O>) -> Result<u32>
+where
+    R: BincodeRead<'de>,
+    O: Options,
+{
+    try!(deserializer.read_bytes(9));
+    Ok(varint::decode(&mut deserializer.reader)? as u32)
 }

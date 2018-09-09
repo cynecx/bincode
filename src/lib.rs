@@ -35,6 +35,12 @@
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
 
+#![feature(crate_in_paths)]
+#![feature(extern_prelude)]
+
+#![feature(test)]
+extern crate test;
+
 extern crate byteorder;
 #[macro_use]
 extern crate serde;
@@ -44,6 +50,7 @@ mod de;
 mod error;
 mod internal;
 mod ser;
+mod varint;
 
 pub use config::Config;
 pub use de::read::{BincodeRead, IoReader, SliceReader};

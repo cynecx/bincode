@@ -6,6 +6,7 @@ use serde;
 use byteorder::WriteBytesExt;
 
 use super::internal::SizeLimit;
+use super::varint;
 use super::{Error, ErrorKind, Result};
 use config::Options;
 
@@ -177,7 +178,7 @@ impl<'a, W: Write, O: Options> serde::Serializer for &'a mut Serializer<W, O> {
         _variant: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeTupleVariant> {
-        try!(self.serialize_u32(variant_index));
+        try!(varint::encode(&mut self.writer, variant_index as u64));
         Ok(Compound { ser: self })
     }
 
@@ -198,7 +199,7 @@ impl<'a, W: Write, O: Options> serde::Serializer for &'a mut Serializer<W, O> {
         _variant: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeStructVariant> {
-        try!(self.serialize_u32(variant_index));
+        try!(varint::encode(&mut self.writer, variant_index as u64));
         Ok(Compound { ser: self })
     }
 
@@ -219,7 +220,7 @@ impl<'a, W: Write, O: Options> serde::Serializer for &'a mut Serializer<W, O> {
     where
         T: serde::ser::Serialize,
     {
-        try!(self.serialize_u32(variant_index));
+        try!(varint::encode(&mut self.writer, variant_index as u64));
         value.serialize(self)
     }
 
@@ -229,7 +230,7 @@ impl<'a, W: Write, O: Options> serde::Serializer for &'a mut Serializer<W, O> {
         variant_index: u32,
         _variant: &'static str,
     ) -> Result<()> {
-        self.serialize_u32(variant_index)
+        varint::encode(&mut self.writer, variant_index as u64)
     }
 
     fn is_human_readable(&self) -> bool {
@@ -381,7 +382,7 @@ impl<'a, O: Options> serde::Serializer for &'a mut SizeChecker<O> {
         _variant: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeTupleVariant> {
-        try!(self.add_value(variant_index));
+        self.add_raw(varint::size_of(variant_index as u64) as u64)?;
         Ok(SizeCompound { ser: self })
     }
 
@@ -403,7 +404,7 @@ impl<'a, O: Options> serde::Serializer for &'a mut SizeChecker<O> {
         _variant: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeStructVariant> {
-        try!(self.add_value(variant_index));
+        self.add_raw(varint::size_of(variant_index as u64) as u64)?;
         Ok(SizeCompound { ser: self })
     }
 
@@ -421,7 +422,7 @@ impl<'a, O: Options> serde::Serializer for &'a mut SizeChecker<O> {
         variant_index: u32,
         _variant: &'static str,
     ) -> Result<()> {
-        self.add_value(variant_index)
+        self.add_raw(varint::size_of(variant_index as u64) as u64)
     }
 
     fn serialize_newtype_variant<V: serde::Serialize + ?Sized>(
@@ -431,7 +432,7 @@ impl<'a, O: Options> serde::Serializer for &'a mut SizeChecker<O> {
         _variant: &'static str,
         value: &V,
     ) -> Result<()> {
-        try!(self.add_value(variant_index));
+        self.add_raw(varint::size_of(variant_index as u64) as u64)?;
         value.serialize(self)
     }
 

@@ -168,6 +168,21 @@ fn test_option() {
 }
 
 #[test]
+fn test_enum_unit() {
+    #[derive(Serialize, Deserialize, PartialEq, Debug)]
+    enum TestEnum {
+        A,
+        B,
+        C,
+        D,
+    }
+    the_same(TestEnum::A);
+    the_same(TestEnum::B);
+    the_same(TestEnum::C);
+    the_same(TestEnum::D);
+}
+
+#[test]
 fn test_enum() {
     #[derive(Serialize, Deserialize, PartialEq, Debug)]
     enum TestEnum {
@@ -179,7 +194,7 @@ fn test_enum() {
     }
     the_same(TestEnum::NoArg);
     the_same(TestEnum::OneArg(4));
-    //the_same(TestEnum::Args(4, 5));
+    the_same(TestEnum::Args(4, 5));
     the_same(TestEnum::AnotherNoArg);
     the_same(TestEnum::StructLike { x: 4, y: 3.14159 });
     the_same(vec![
@@ -243,7 +258,7 @@ fn deserializing_errors() {
         Two,
     };
 
-    match *deserialize::<Test>(&vec![0, 0, 0, 5][..]).unwrap_err() {
+    match *deserialize::<Test>(&vec![11][..]).unwrap_err() {
         // Error message comes from serde
         ErrorKind::Custom(_) => {}
         _ => panic!(),
